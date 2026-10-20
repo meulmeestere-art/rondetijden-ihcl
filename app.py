@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import hmac
 import html
+import logging
 import os
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta
@@ -18,6 +19,7 @@ import pandas as pd
 import requests
 import streamlit as st
 import urllib3
+from urllib3.util.retry import Retry
 
 # ---------------------------------------------------------------------------
 # Instellingen
@@ -38,6 +40,7 @@ MAX_WORKERS = 10
 MIN_LAP_SECONDS = 9.0
 MAX_LAP_SECONDS = 18.0
 
+STALE_MAX_SECONDS = 600  # zo lang tonen we oude gegevens als Speedhive niet antwoordt
 ACTIVE_SECONDS = 60  # rijders die korter geleden passeerden worden gemarkeerd
 ONLY_LATEST_DAY = True  # alleen de meest recente trainingsdag tonen
 TIMEZONE = ZoneInfo("Europe/Amsterdam")
@@ -57,6 +60,8 @@ HEADERS = {
     "Referer": "https://sporthive.com/",
     "Origin": "https://sporthive.com",
 }
+
+log = logging.getLogger("rondetijden")
 
 st.set_page_config(page_title=APP_TITLE, page_icon="⛸️", layout="wide")
 
@@ -109,10 +114,16 @@ def fetch_skater(session: requests.Session, activity: dict) -> dict | None:
     resp = session.get(url, timeout=REQUEST_TIMEOUT, verify=VERIFY_SSL)
     resp.raise_for_status()
     data = resp.json()
+    if not isinstance(data, dict):
+        raise ValueError("onverwacht antwoord")
 
     laps = []  # (sorteersleutel, passeertijd, duur, ruwe ronde)
-    for sess in data.get("sessions", []):
-        for lap in sess.get("laps", []):
+    for sess in data.get("sessions") or []:
+        if not isinstance(sess, dict):
+            continue
+        for lap in sess.get("laps") or []:
+            if not isinstance(lap, dict):
+                continue
             try:
                 duration = float(lap.get("duration"))
             except (TypeError, ValueError):
@@ -172,8 +183,6 @@ def fetch_skater(session: requests.Session, activity: dict) -> dict | None:
         "st3": st3,
         "kph": speed or None,
         "best": best,
-        "laps": len(laps),
-        "chip": activity.get("chipCode") or "-",
     }
 
 
@@ -181,9 +190,47 @@ def fetch_skater(session: requests.Session, activity: dict) -> dict | None:
 def get_session() -> requests.Session:
     session = requests.Session()
     session.headers.update(HEADERS)
-    adapter = requests.adapters.HTTPAdapter(pool_maxsize=MAX_WORKERS)
+    retry = Retry(
+        total=2,
+        backoff_factor=0.4,
+        status_forcelist=(429, 500, 502, 503, 504),
+        allowed_methods=("GET",),
+        raise_on_status=False,
+    )
+    adapter = requests.adapters.HTTPAdapter(pool_maxsize=MAX_WORKERS, max_retries=retry)
     session.mount("https://", adapter)
     return session
+
+
+@st.cache_resource
+def get_state() -> dict:
+    """Onthoudt de laatste gelukte gegevens, voor als Speedhive even niet antwoordt."""
+    return {"df": None, "meta": None, "ok_at": None, "rows": {}}
+
+
+def describe_error(exc: Exception) -> str:
+    if isinstance(exc, requests.HTTPError) and exc.response is not None:
+        return f"Speedhive geeft foutcode {exc.response.status_code}"
+    if isinstance(exc, requests.Timeout):
+        return "Speedhive reageert niet op tijd"
+    if isinstance(exc, requests.ConnectionError):
+        return "geen verbinding met Speedhive"
+    return "onverwacht antwoord van Speedhive"
+
+
+def fetch_activities(session: requests.Session) -> list:
+    resp = session.get(
+        ACTIVITIES_URL,
+        params={"count": ACTIVITIES_COUNT, "offset": 0},
+        timeout=REQUEST_TIMEOUT,
+        verify=VERIFY_SSL,
+    )
+    resp.raise_for_status()
+    data = resp.json()
+    activities = data.get("activities", []) if isinstance(data, dict) else None
+    if not isinstance(activities, list):
+        raise ValueError("onverwacht antwoord")
+    return [a for a in activities if isinstance(a, dict)]
 
 
 @st.cache_data(ttl=REFRESH_SECONDS, show_spinner=False)
@@ -191,22 +238,25 @@ def load_live_data(only_latest_day: bool) -> tuple[pd.DataFrame, dict]:
     """Geeft de tabel en metadata terug. Wordt gedeeld tussen alle kijkers.
 
     Dankzij de korte cache doet het aantal schermen geen extra verzoeken aan
-    de Speedhive API.
+    de Speedhive API. Bij een storing blijven de laatste gelukte gegevens
+    zichtbaar, met een melding.
     """
-    meta: dict = {"date": None, "errors": 0, "message": None}
+    meta: dict = {"date": None, "errors": 0, "message": None, "stale_at": None, "reason": None}
     session = get_session()
+    state = get_state()
+    now = datetime.now(TIMEZONE)
 
     try:
-        resp = session.get(
-            ACTIVITIES_URL,
-            params={"count": ACTIVITIES_COUNT, "offset": 0},
-            timeout=REQUEST_TIMEOUT,
-            verify=VERIFY_SSL,
-        )
-        resp.raise_for_status()
-        activities = resp.json().get("activities", [])
+        activities = fetch_activities(session)
     except (requests.RequestException, ValueError) as exc:
-        meta["message"] = f"⚠️ Geen verbinding met MYLAPS Speedhive: {exc}"
+        reason = describe_error(exc)
+        log.warning("Activiteiten ophalen mislukt: %s", exc)
+        ok_at = state["ok_at"]
+        if state["df"] is not None and ok_at and (now - ok_at).total_seconds() <= STALE_MAX_SECONDS:
+            stale = dict(state["meta"])
+            stale.update(stale_at=ok_at, reason=reason)
+            return state["df"], stale
+        meta["message"] = f"⚠️ {reason[0].upper()}{reason[1:]}. Een nieuwe poging volgt automatisch."
         return pd.DataFrame(), meta
 
     if not activities:
@@ -224,14 +274,20 @@ def load_live_data(only_latest_day: bool) -> tuple[pd.DataFrame, dict]:
 
     rows = []
     with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
-        futures = [executor.submit(fetch_skater, session, a) for a in selected]
-        for future in futures:
+        futures = [(a, executor.submit(fetch_skater, session, a)) for a in selected]
+        for activity, future in futures:
+            key = activity.get("id")
             try:
                 row = future.result()
-            except (requests.RequestException, ValueError):
+            except (requests.RequestException, ValueError) as exc:
+                log.warning("Rijder %s ophalen mislukt: %s", key, exc)
                 meta["errors"] += 1
+                row = state["rows"].get(key)  # vorige gelukte waarde blijft staan
+                if row is not None:
+                    rows.append(row)
                 continue
             if row is not None:
+                state["rows"][key] = row
                 rows.append(row)
 
     if not rows:
@@ -244,6 +300,7 @@ def load_live_data(only_latest_day: bool) -> tuple[pd.DataFrame, dict]:
         .drop(columns="_ts")
         .reset_index(drop=True)
     )
+    state.update(df=df, meta=dict(meta), ok_at=now)
     return df, meta
 
 
@@ -280,6 +337,7 @@ td.muted,.muted{color:var(--muted);font-size:.95rem;}
 .lap.none{color:var(--muted);}
 .best{font-weight:700;}
 .star{color:var(--pr);margin-left:.3em;}
+.notice{margin:0 0 .8rem;padding:10px 16px;border-radius:12px;background:#fff7e0;border:1px solid #f0d98a;color:#7a5b00;}
 .legend{margin:.7rem 0 0;color:var(--muted);font-size:.9rem;}
 .empty{padding:2.5rem;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:14px;font-size:1.2rem;}
 @media (max-width:900px){table.laps{font-size:1rem;}.kpi .v{font-size:1.5rem;}}
@@ -315,24 +373,34 @@ def build_table(df: pd.DataFrame, now: datetime) -> str:
             f"<td>{fmt_lap(r.lap3, r.st3)}</td>"
             f"<td>{kph}</td>"
             f'<td class="best">{r.best:.3f}{star}</td>'
-            f"<td>{r.laps}</td>"
-            f'<td class="muted">{html.escape(str(r.chip))}</td>'
             "</tr>"
         )
     head = (
         '<th class="l">Passering</th><th class="l">Rijder</th><th>Laatste ronde</th>'
         "<th>Ronde -2</th><th>Ronde -3</th><th>km/u</th><th>Dag beste</th>"
-        "<th>Rondes</th><th>Transponder</th>"
     )
     return f'<div class="wrap"><table class="laps"><thead><tr>{head}</tr></thead><tbody>{"".join(rows)}</tbody></table></div>'
 
 
+def ago_text(seconds: float) -> str:
+    seconds = max(int(seconds), 0)
+    if seconds < 60:
+        return "zojuist"
+    minutes = seconds // 60
+    if minutes < 60:
+        return f"{minutes} min geleden"
+    return f"{minutes // 60} u {minutes % 60} min geleden"
+
+
 def build_kpis(df: pd.DataFrame, meta: dict, now: datetime) -> str:
     fastest_row = df.loc[df["best"].idxmin()]
+    last_pass = df["passed"].dropna().max() if df["passed"].notna().any() else None
+    last_pass_txt = last_pass.strftime("%H:%M:%S") if last_pass is not None else "-"
+    last_pass_ago = ago_text((now - last_pass).total_seconds()) if last_pass is not None else ""
     cards = [
         ("Op het ijs", f'<span class="live"></span>{len(df)}', f"Trainingsdag {meta['date']}" if meta["date"] else "Rijders met tijden"),
         ("Snelste ronde", f"{fastest_row['best']:.3f}", html.escape(str(fastest_row["rider"]))),
-        ("Rondes totaal", f"{int(df['laps'].sum())}", "binnen 9 tot 18 seconden"),
+        ("Laatste passering", last_pass_txt, last_pass_ago),
         ("Laatste controle", now.strftime("%H:%M:%S"), f"ververst elke {REFRESH_SECONDS} seconden"),
     ]
     inner = "".join(
@@ -372,15 +440,28 @@ require_access()
 @st.fragment(run_every=REFRESH_SECONDS)
 def live_view() -> None:
     """Ververst alleen dit blok, de rest van de pagina blijft staan."""
-    df, meta = load_live_data(ONLY_LATEST_DAY)
-    now = datetime.now(TIMEZONE)
+    try:
+        df, meta = load_live_data(ONLY_LATEST_DAY)
+        now = datetime.now(TIMEZONE)
 
-    if df.empty:
-        st.html(f'<div class="empty">{html.escape(meta["message"] or "Geen data.")}<br>Wachten op doorkomsten van rijders...</div>')
-        return
+        if df.empty:
+            msg = html.escape(meta["message"] or "Geen data.")
+            st.html(f'<div class="empty">{msg}<br>Wachten op doorkomsten van rijders...</div>')
+            return
 
-    warn = f'<div class="legend">⚠️ {meta["errors"]} rijder(s) niet opgehaald</div>' if meta["errors"] else ""
-    st.html(build_kpis(df, meta, now) + build_table(df, now) + LEGEND_HTML + warn)
+        notices = ""
+        if meta.get("stale_at"):
+            notices += (
+                f'<div class="notice">⚠️ {html.escape(meta["reason"] or "Speedhive reageert even niet")}. '
+                f'Je ziet de gegevens van {meta["stale_at"].strftime("%H:%M:%S")}. '
+                "Een nieuwe poging volgt automatisch.</div>"
+            )
+        elif meta["errors"]:
+            notices += f'<div class="notice">⚠️ {meta["errors"]} rijder(s) niet ververst, de vorige waarde blijft staan.</div>'
+        st.html(notices + build_kpis(df, meta, now) + build_table(df, now) + LEGEND_HTML)
+    except Exception:  # nooit een foutmelding met traceback aan de baan tonen
+        log.exception("Weergave mislukt")
+        st.html('<div class="empty">Even geen gegevens. Een nieuwe poging volgt automatisch.</div>')
 
 
 live_view()

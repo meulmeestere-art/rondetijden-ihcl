@@ -5,7 +5,7 @@
 1. Haalt de laatste 30 trainingsactiviteiten van IJshal De Vliet op uit MYLAPS Speedhive.
 2. Kiest de meest recente trainingsdag (in Nederlandse tijd).
 3. Haalt per rijder de sessies en rondes op, tot tien rijders tegelijk.
-4. Laat rondes onder 9,0 en boven 18,0 seconden weg. Daaruit komen de laatste drie rondes, de dag beste, de snelheid en het aantal rondes.
+4. Laat rondes onder 9,0 en boven 18,0 seconden weg. Daaruit komen de laatste drie rondes, de dag beste en de snelheid.
 5. Toont de rijder met de meest recente passering bovenaan.
 
 Het scherm ververst elke 3 seconden. Alleen de tabel ververst, de kop en het logo blijven staan. De opgehaalde data wordt 3 seconden gedeeld tussen alle kijkers. Meer schermen betekent dus niet meer verzoeken aan Speedhive.
@@ -33,6 +33,8 @@ De omgevingsvariabele `VERIFY_SSL=0` zet de certificaatcontrole uit. Gebruik dat
 - Het aantal rondes telt nu alleen rondes binnen de grenzen, zodat het past bij de dag beste.
 - Een fout bij een enkele rijder wordt in de statusregel getoond in plaats van stil overgeslagen.
 - Optionele toegangscode via `ACCESS_CODE`.
+- Foutafhandeling: twee herhaalpogingen bij een tijdelijke fout van Speedhive, onverwachte antwoorden worden afgevangen, en bij een storing blijven de laatste gelukte gegevens zichtbaar met een melding. Een foutmelding met traceback wordt niet meer getoond.
+- De kolommen Transponder en Rondes zijn weggehaald. De kaart Rondes totaal is vervangen door Laatste passering.
 - Laatste Passering toont het einde van de ronde in plaats van het begin.
 - PR staat alleen bij de ronde die gelijk is aan de dag beste. Sneller en langzamer wordt berekend op de gefilterde rondes. De status van Speedhive rekende ook mee met foutmetingen, waardoor bij 2 van de 10 rijders de echte beste ronde geen PR kreeg.
 - Logo van IHCL links en van de Academy rechts, lichte weergave zodat de zwarte logo's leesbaar blijven.
@@ -41,9 +43,10 @@ De omgevingsvariabele `VERIFY_SSL=0` zet de certificaatcontrole uit. Gebruik dat
 
 | Melding | Mogelijke oorzaak | Aanpak |
 |---|---|---|
-| Geen verbinding met MYLAPS Speedhive | API tijdelijk niet bereikbaar of aangepast | Even wachten. Blijft het zo, controleer in de browser of de Speedhive-pagina van de locatie nog werkt |
+| Gele melding met de laatste gelukte tijd | Speedhive geeft tijdelijk een fout (bijvoorbeeld foutcode 500) | Niets doen. Het script probeert het opnieuw en toont intussen de laatste gelukte gegevens, tot 10 minuten lang |
+| Speedhive geeft foutcode of onverwacht antwoord, zonder tabel | De fout duurt langer dan 10 minuten of er waren nog geen gegevens | Even wachten. Blijft het zo, controleer in de browser of de Speedhive-pagina van de locatie nog werkt |
 | Wachten op doorkomsten van rijders | Niemand op het ijs of alle rondes buiten de grenzen | Controleer de grenzen van 9,0 en 18,0 seconden |
-| Rijder(s) niet opgehaald | Time-out bij een enkele rijder | Verdwijnt meestal bij de volgende verversing |
+| Rijder(s) niet ververst | Time-out bij een enkele rijder | De vorige waarde blijft staan en verdwijnt bij de volgende verversing |
 | App slaapt | 12 uur zonder bezoek | Op de knop klikken om hem wakker te maken |
 
 ## Aandachtspunten voor het bestuur
