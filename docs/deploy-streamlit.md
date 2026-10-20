@@ -6,7 +6,7 @@ Doel: het dashboard draait zonder dat een laptop aan hoeft te staan. Elke wijzig
 
 - Een GitHub-account met een repository voor dit project (bijvoorbeeld `rondetijden-ihcl`)
 - Een gratis account op Streamlit Community Cloud, ingelogd via GitHub
-- Optioneel: `logo.png` van IHCL of de Academy
+- De logo's in de map `assets` (zitten al in de repository)
 
 ## Stap 1: code op GitHub zetten
 

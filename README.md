@@ -11,7 +11,7 @@ pip install -r requirements.txt
 streamlit run app.py
 ```
 
-Zet het clublogo als `logo.png` naast `app.py`. Zonder logo werkt het dashboard ook.
+De logo's staan in de map `assets`: `logo_ihcl.png` links en `logo_academy.png` rechts in de kop. Zonder logobestanden werkt het dashboard ook.
 
 ## Documentatie
 

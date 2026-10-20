@@ -33,6 +33,8 @@ De omgevingsvariabele `VERIFY_SSL=0` zet de certificaatcontrole uit. Gebruik dat
 - Het aantal rondes telt nu alleen rondes binnen de grenzen, zodat het past bij de dag beste.
 - Een fout bij een enkele rijder wordt in de statusregel getoond in plaats van stil overgeslagen.
 - Optionele toegangscode via `ACCESS_CODE`.
+- Laatste Passering toont het einde van de ronde in plaats van het begin.
+- Logo van IHCL links en van de Academy rechts, lichte weergave zodat de zwarte logo's leesbaar blijven.
 
 ## Bij storing
 
@@ -46,12 +48,13 @@ De omgevingsvariabele `VERIFY_SSL=0` zet de certificaatcontrole uit. Gebruik dat
 ## Aandachtspunten voor het bestuur
 
 - Het dashboard gebruikt een API van Speedhive die niet als officiele publieke dienst is gedocumenteerd. Die kan zonder aankondiging veranderen. [Ongeverifieerd]
-- De kolom Laatste Passering toont het starttijdstip van de laatste ronde zoals Speedhive dat levert. Controleer bij een echte training of dat overeenkomt met het moment dat de rijder over de lijn ging.
+- Speedhive levert van elke ronde het starttijdstip. De kolom Laatste Passering toont start plus rondetijd, dus het moment dat de rijder over de lijn ging. Dit is op 20 oktober 2026 gecontroleerd aan echte data: de start van een ronde valt samen met het einde van de vorige.
 - Perspectieven: de trainer wil direct zien wie hoe rijdt, de rijder wil niet dat een slechte ronde publiek wordt uitgelicht, ouders willen weten wie de naam van hun kind ziet, en het bestuur is verantwoordelijk voor de privacy van minderjarigen. Dat spanningsveld is de reden voor de toegangsopties in `deploy-streamlit.md`.
 - Risico dat onderbelicht blijft: een openbare link wordt gedeeld buiten de club. Een toegangscode of een besloten app voorkomt dat.
 
 ## Bronnen en Verantwoording
 
 - [Logische deductie] De tijdzonefout volgt uit het gedrag van een cloudserver op UTC en het feit dat de oude code de tijdstippen zonder omrekening toonde.
-- [Ongeverifieerd] Stabiliteit en gebruiksvoorwaarden van de Speedhive-API en de betekenis van `dateTimeStart`. Er is geen toegang tot de API geweest. Het script is getest met nagemaakte data.
+- [Geverifieerd] Veldnamen en de betekenis van `dateTimeStart` zijn op 20 oktober 2026 gecontroleerd via een aanroep vanuit de browser op sporthive.com. Een directe aanroep zonder `Origin` en `Referer` geeft HTTP 401, daarom stuurt het script die headers mee.
+- [Ongeverifieerd] Stabiliteit en gebruiksvoorwaarden van de Speedhive-API.
 - [Algemene AI-kennis] Werking van `st.fragment` en `st.cache_data`.

@@ -9,7 +9,7 @@ from __future__ import annotations
 import hmac
 import os
 from concurrent.futures import ThreadPoolExecutor
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
@@ -122,7 +122,7 @@ def fetch_skater(session: requests.Session, activity: dict) -> dict | None:
     resp.raise_for_status()
     data = resp.json()
 
-    laps = []  # (sorteersleutel, starttijd, duur, ruwe ronde)
+    laps = []  # (sorteersleutel, passeertijd, duur, ruwe ronde)
     for sess in data.get("sessions", []):
         for lap in sess.get("laps", []):
             try:
@@ -131,7 +131,10 @@ def fetch_skater(session: requests.Session, activity: dict) -> dict | None:
                 continue
             if MIN_LAP_SECONDS <= duration <= MAX_LAP_SECONDS:
                 start = parse_ts(lap.get("dateTimeStart"))
-                laps.append((start.timestamp() if start else 0.0, start, duration, lap))
+                # dateTimeStart is het begin van de ronde. De passering over de
+                # lijn is het einde: start plus rondetijd.
+                passed = start + timedelta(seconds=duration) if start else None
+                laps.append((passed.timestamp() if passed else 0.0, passed, duration, lap))
 
     if not laps:
         return None
@@ -233,14 +236,17 @@ def load_live_data(only_latest_day: bool) -> tuple[pd.DataFrame, dict]:
 # ---------------------------------------------------------------------------
 # Scherm
 # ---------------------------------------------------------------------------
-col_logo, col_title = st.columns([1, 8])
-with col_logo:
-    logo = Path(__file__).parent / "logo.png"
-    if logo.exists():
-        st.image(str(logo), width=110)
+ASSETS = Path(__file__).parent / "assets"
+col_ihcl, col_title, col_academy = st.columns([1, 6, 1], vertical_alignment="center")
+with col_ihcl:
+    if (ASSETS / "logo_ihcl.png").exists():
+        st.image(str(ASSETS / "logo_ihcl.png"), width=120)
 with col_title:
     st.title(f"⛸️ {APP_TITLE}")
     st.markdown(f"**Locatie:** {LOCATION_NAME}")
+with col_academy:
+    if (ASSETS / "logo_academy.png").exists():
+        st.image(str(ASSETS / "logo_academy.png"), width=120)
 
 require_access()
 
