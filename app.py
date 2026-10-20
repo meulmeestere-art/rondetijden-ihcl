@@ -131,11 +131,31 @@ def fetch_skater(session: requests.Session, activity: dict) -> dict | None:
     last = laps[-1]
     speed = (last[3].get("speed") or {}).get("kph") or 0.0
 
+    best = min(item[2] for item in laps)
+
+    def status_of(index: int) -> str:
+        """Eigen status op basis van de gefilterde rondes.
+
+        De status van Speedhive rekent ook mee met rondes buiten de grenzen,
+        waardoor een echte beste ronde soms geen PR krijgt. PR geldt hier alleen
+        voor de ronde die gelijk is aan de dag beste.
+        """
+        duration = laps[index][2]
+        if duration == best:
+            return "REPORTBEST"
+        if index == 0:
+            return "NONE"
+        previous = laps[index - 1][2]
+        if duration < previous:
+            return "FASTER"
+        if duration > previous:
+            return "SLOWER"
+        return "NONE"
+
     def nth_last(n: int) -> tuple[float | None, str]:
         if len(laps) < n:
             return None, ""
-        _, _, duration, raw = laps[-n]
-        return duration, raw.get("status") or ""
+        return laps[-n][2], status_of(len(laps) - n)
 
     lap1, st1 = nth_last(1)
     lap2, st2 = nth_last(2)
@@ -151,7 +171,7 @@ def fetch_skater(session: requests.Session, activity: dict) -> dict | None:
         "lap3": lap3,
         "st3": st3,
         "kph": speed or None,
-        "best": min(item[2] for item in laps),
+        "best": best,
         "laps": len(laps),
         "chip": activity.get("chipCode") or "-",
     }

@@ -34,6 +34,7 @@ De omgevingsvariabele `VERIFY_SSL=0` zet de certificaatcontrole uit. Gebruik dat
 - Een fout bij een enkele rijder wordt in de statusregel getoond in plaats van stil overgeslagen.
 - Optionele toegangscode via `ACCESS_CODE`.
 - Laatste Passering toont het einde van de ronde in plaats van het begin.
+- PR staat alleen bij de ronde die gelijk is aan de dag beste. Sneller en langzamer wordt berekend op de gefilterde rondes. De status van Speedhive rekende ook mee met foutmetingen, waardoor bij 2 van de 10 rijders de echte beste ronde geen PR kreeg.
 - Logo van IHCL links en van de Academy rechts, lichte weergave zodat de zwarte logo's leesbaar blijven.
 
 ## Bij storing
