@@ -6,8 +6,10 @@ IJshal De Vliet in Leiden. Bedoeld voor een TV of tablet langs de ijsbaan.
 
 from __future__ import annotations
 
+import base64
 import hmac
 import html
+import io
 import logging
 import os
 from concurrent.futures import ThreadPoolExecutor
@@ -18,6 +20,7 @@ from zoneinfo import ZoneInfo
 import pandas as pd
 import requests
 import streamlit as st
+from PIL import Image
 import urllib3
 from urllib3.util.retry import Retry
 
@@ -40,6 +43,7 @@ MAX_WORKERS = 10
 MIN_LAP_SECONDS = 9.0
 MAX_LAP_SECONDS = 18.0
 
+COMPACT_ROWS = 10  # aantal rijders in de compacte weergave (768 bij 512)
 STALE_MAX_SECONDS = 600  # zo lang tonen we oude gegevens als Speedhive niet antwoordt
 ACTIVE_SECONDS = 60  # rijders die korter geleden passeerden worden gemarkeerd
 ONLY_LATEST_DAY = True  # alleen de meest recente trainingsdag tonen
@@ -340,9 +344,78 @@ td.muted,.muted{color:var(--muted);font-size:.95rem;}
 .notice{margin:0 0 .8rem;padding:10px 16px;border-radius:12px;background:#fff7e0;border:1px solid #f0d98a;color:#7a5b00;}
 .legend{margin:.7rem 0 0;color:var(--muted);font-size:.9rem;}
 .empty{padding:2.5rem;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:14px;font-size:1.2rem;}
-@media (max-width:900px){table.laps{font-size:1rem;}.kpi .v{font-size:1.5rem;}}
+.more{display:none;}
+.head{display:flex;align-items:center;gap:1.2rem;margin:.2rem 0 .8rem;}
+.head img{height:96px;width:auto;flex:none;}
+.head .ttl{flex:1;min-width:0;}
+.head h1{margin:0!important;padding:0!important;font-size:2.4rem!important;line-height:1.15!important;font-weight:700;color:var(--ink);}
+.head .loc{color:var(--muted);margin-top:.3rem;}
+@media (max-width:900px){table.laps{font-size:1rem;}table.laps th{padding:10px 8px;}table.laps td{padding:8px 8px;}.lap{min-width:4.4em;padding:2px 6px;}.lap.first{font-size:1.1rem;}}
+@media (max-width:700px){.head img{height:56px;}.head h1{font-size:1.5rem!important;}}
 </style>
 """
+
+# Compacte weergave voor kleine schermen, zoals 768 bij 512 pixels. Staat aan
+# via de browser zodra het scherm lager is dan 600 pixels, of via ?scherm=klein.
+COMPACT_RULES = f"""
+[data-testid="stHeader"],[data-testid="stToolbar"]{{display:none!important;}}
+[data-testid="stMainBlockContainer"],.block-container{{padding:.45rem .7rem .3rem!important;max-width:100%!important;}}
+[data-testid="stVerticalBlock"]{{gap:.35rem!important;}}
+.head{{gap:.6rem;margin:0 0 .15rem;}}
+.head img{{height:36px;}}
+.head h1{{font-size:1.15rem!important;}}
+.head .loc{{font-size:.72rem;margin-top:.05rem;}}
+.kpis{{grid-template-columns:repeat(4,1fr);gap:6px;margin:.25rem 0 .35rem;}}
+.kpi{{padding:5px 9px;border-radius:9px;}}
+.kpi .l{{font-size:.58rem;letter-spacing:.05em;}}
+.kpi .v{{font-size:1.15rem;line-height:1.2;}}
+.kpi .s{{font-size:.66rem;}}
+.wrap{{border-radius:9px;}}
+table.laps{{font-size:.85rem;}}
+table.laps th{{font-size:.58rem;padding:5px 7px;letter-spacing:.04em;}}
+table.laps td{{padding:2px 7px;}}
+table.laps tbody tr:nth-child(n+{COMPACT_ROWS + 1}){{display:none;}}
+.lap{{min-width:4.6em;padding:1px 6px;}}
+.lap.first{{font-size:.95rem;}}
+.star{{margin-left:.15em;}}
+table.laps tr.now td:first-child{{box-shadow:inset 3px 0 0 var(--accent);}}
+.notice{{margin:0 0 .3rem;padding:4px 10px;font-size:.72rem;border-radius:8px;}}
+.legend{{margin:.3rem 0 0;font-size:.62rem;}}
+.more{{display:inline;}}
+.empty{{padding:1rem;font-size:.9rem;}}
+"""
+CSS += "<style>@media (max-height:600px){" + COMPACT_RULES + "}</style>"
+
+ASSETS = Path(__file__).parent / "assets"
+
+
+@st.cache_resource
+def logo_data_uri(name: str) -> str:
+    """Verkleint het logo eenmalig en geeft het terug als ingebed plaatje."""
+    path = ASSETS / name
+    if not path.exists():
+        return ""
+    with Image.open(path) as im:
+        im.thumbnail((300, 300))
+        buf = io.BytesIO()
+        im.save(buf, "PNG", optimize=True)
+    return "data:image/png;base64," + base64.b64encode(buf.getvalue()).decode()
+
+
+def build_header() -> str:
+    def img(name: str, alt: str) -> str:
+        uri = logo_data_uri(name)
+        return f'<img src="{uri}" alt="{alt}">' if uri else "<span></span>"
+
+    return (
+        '<div class="head">'
+        + img("logo_ihcl.png", "IHCL Leiden")
+        + f'<div class="ttl"><h1>⛸️ {html.escape(APP_TITLE)}</h1>'
+        + f'<div class="loc">Locatie: {html.escape(LOCATION_NAME)}</div></div>'
+        + img("logo_academy.png", "Shorttrack Academy Leiden")
+        + "</div>"
+    )
+
 
 MARKS = {"REPORTBEST": ("pr", " PR"), "FASTER": ("fast", " ▼"), "SLOWER": ("slow", " ▲")}
 
@@ -392,6 +465,12 @@ def ago_text(seconds: float) -> str:
     return f"{minutes // 60} u {minutes % 60} min geleden"
 
 
+def build_legend(df: pd.DataFrame) -> str:
+    hidden = len(df) - COMPACT_ROWS
+    more = f'<span class="more"> | nog {hidden} rijder(s) op het ijs</span>' if hidden > 0 else ""
+    return LEGEND_HTML[:-6] + more + "</div>"
+
+
 def build_kpis(df: pd.DataFrame, meta: dict, now: datetime) -> str:
     fastest_row = df.loc[df["best"].idxmin()]
     last_pass = df["passed"].dropna().max() if df["passed"].notna().any() else None
@@ -420,19 +499,8 @@ LEGEND_HTML = (
 # ---------------------------------------------------------------------------
 # Scherm
 # ---------------------------------------------------------------------------
-st.html(CSS)
-
-ASSETS = Path(__file__).parent / "assets"
-col_ihcl, col_title, col_academy = st.columns([1, 6, 1], vertical_alignment="center")
-with col_ihcl:
-    if (ASSETS / "logo_ihcl.png").exists():
-        st.image(str(ASSETS / "logo_ihcl.png"), width=120)
-with col_title:
-    st.title(f"⛸️ {APP_TITLE}")
-    st.markdown(f"**Locatie:** {LOCATION_NAME}")
-with col_academy:
-    if (ASSETS / "logo_academy.png").exists():
-        st.image(str(ASSETS / "logo_academy.png"), width=120)
+forced = "<style>" + COMPACT_RULES + "</style>" if st.query_params.get("scherm") == "klein" else ""
+st.html(CSS + forced + build_header())
 
 require_access()
 
@@ -458,7 +526,7 @@ def live_view() -> None:
             )
         elif meta["errors"]:
             notices += f'<div class="notice">⚠️ {meta["errors"]} rijder(s) niet ververst, de vorige waarde blijft staan.</div>'
-        st.html(notices + build_kpis(df, meta, now) + build_table(df, now) + LEGEND_HTML)
+        st.html(notices + build_kpis(df, meta, now) + build_table(df, now) + build_legend(df))
     except Exception:  # nooit een foutmelding met traceback aan de baan tonen
         log.exception("Weergave mislukt")
         st.html('<div class="empty">Even geen gegevens. Een nieuwe poging volgt automatisch.</div>')

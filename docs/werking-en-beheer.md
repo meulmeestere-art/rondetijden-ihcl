@@ -10,6 +10,15 @@
 
 Het scherm ververst elke 3 seconden. Alleen de tabel ververst, de kop en het logo blijven staan. De opgehaalde data wordt 3 seconden gedeeld tussen alle kijkers. Meer schermen betekent dus niet meer verzoeken aan Speedhive.
 
+## Kleine schermen (768 bij 512 pixels)
+
+Voor een klein scherm langs de baan is er een compacte weergave. Die toont de kop in een smalle regel met kleine logo's, de vier kaarten in een rij en de tien rijders met de meest recente passering. Onderaan staat in de legenda hoeveel rijders er nog meer op het ijs zijn.
+
+- **Automatisch:** de compacte weergave gaat aan zodra het venster lager is dan 600 pixels.
+- **Geforceerd:** voeg `?scherm=klein` toe aan het adres, dus `https://rondetijden-ihcl.streamlit.app/?scherm=klein`. Gebruik dit adres op het kleine scherm. Dan werkt het ook als de browser zelf ruimte inneemt, bijvoorbeeld een adresbalk.
+- De bovenbalk van Streamlit is dan verborgen. Dat is bedoeld voor een scherm dat alleen meekijkt.
+- Op een iPad staand (768 bij 1024) is de gewone weergave iets kleiner gezet zodat de tabel zonder zijwaarts scrollen past.
+
 ## Instellingen
 
 Bovenin `app.py` staan de instellingen:
@@ -21,6 +30,7 @@ Bovenin `app.py` staan de instellingen:
 | `MAX_LAP_SECONDS` | 18.0 | Tragere rondes tellen niet mee |
 | `ONLY_LATEST_DAY` | `True` | Alleen de laatste trainingsdag tonen |
 | `LOCATION_ID` | `208259692` | Locatie in Speedhive |
+| `COMPACT_ROWS` | 10 | Aantal rijders in de compacte weergave voor kleine schermen |
 
 De omgevingsvariabele `VERIFY_SSL=0` zet de certificaatcontrole uit. Gebruik dat alleen lokaal als een Mac certificaatfouten geeft.
 
@@ -37,7 +47,8 @@ De omgevingsvariabele `VERIFY_SSL=0` zet de certificaatcontrole uit. Gebruik dat
 - De kolommen Transponder en Rondes zijn weggehaald. De kaart Rondes totaal is vervangen door Laatste passering.
 - Laatste Passering toont het einde van de ronde in plaats van het begin.
 - PR staat alleen bij de ronde die gelijk is aan de dag beste. Sneller en langzamer wordt berekend op de gefilterde rondes. De status van Speedhive rekende ook mee met foutmetingen, waardoor bij 2 van de 10 rijders de echte beste ronde geen PR kreeg.
-- Logo van IHCL links en van de Academy rechts, lichte weergave zodat de zwarte logo's leesbaar blijven.
+- Logo van IHCL links en van de Academy rechts, lichte weergave zodat de zwarte logo's leesbaar blijven. De logo's worden bij het opstarten verkleind en in de pagina ingebed.
+- Compacte weergave voor schermen van 768 bij 512 pixels.
 
 ## Bij storing
 
@@ -61,4 +72,6 @@ De omgevingsvariabele `VERIFY_SSL=0` zet de certificaatcontrole uit. Gebruik dat
 - [Logische deductie] De tijdzonefout volgt uit het gedrag van een cloudserver op UTC en het feit dat de oude code de tijdstippen zonder omrekening toonde.
 - [Geverifieerd] Veldnamen en de betekenis van `dateTimeStart` zijn op 20 oktober 2026 gecontroleerd via een aanroep vanuit de browser op sporthive.com. Een directe aanroep zonder `Origin` en `Referer` geeft HTTP 401, daarom stuurt het script die headers mee.
 - [Ongeverifieerd] Stabiliteit en gebruiksvoorwaarden van de Speedhive-API.
+- [Geverifieerd] De compacte weergave is getest met een echte browser op 768 bij 512, 768 bij 1024 en 1440 bij 900 pixels, met nagemaakte data van 12 rijders. Er was geen horizontale scroll en de legenda bleef zichtbaar met 20 pixels marge.
+- [Ongeverifieerd] Hoe het eruitziet op het echte scherm. Browserbalken, schaalinstellingen van het apparaat en de afstand tot het scherm kunnen anders uitpakken.
 - [Algemene AI-kennis] Werking van `st.fragment` en `st.cache_data`.
