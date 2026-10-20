@@ -50,6 +50,7 @@ De omgevingsvariabele `VERIFY_SSL=0` zet de certificaatcontrole uit. Gebruik dat
 - PR staat alleen bij de ronde die gelijk is aan de dag beste. Sneller en langzamer wordt berekend op de gefilterde rondes. De status van Speedhive rekende ook mee met foutmetingen, waardoor bij 2 van de 10 rijders de echte beste ronde geen PR kreeg.
 - Logo van IHCL links en van de Academy rechts, lichte weergave zodat de zwarte logo's leesbaar blijven. De logo's worden bij het opstarten verkleind en in de pagina ingebed.
 - Compacte weergave voor schermen van 768 bij 512 pixels.
+- De kolommen Passering en Rijder zijn zo smal als hun inhoud. De ruimte die dat oplevert gaat naar de tijden, die in de compacte weergave groter zijn. Een lange naam wordt afgekapt met puntjes.
 
 ## Bij storing
 
@@ -73,6 +74,6 @@ De omgevingsvariabele `VERIFY_SSL=0` zet de certificaatcontrole uit. Gebruik dat
 - [Logische deductie] De tijdzonefout volgt uit het gedrag van een cloudserver op UTC en het feit dat de oude code de tijdstippen zonder omrekening toonde.
 - [Geverifieerd] Veldnamen en de betekenis van `dateTimeStart` zijn op 20 oktober 2026 gecontroleerd via een aanroep vanuit de browser op sporthive.com. Een directe aanroep zonder `Origin` en `Referer` geeft HTTP 401, daarom stuurt het script die headers mee.
 - [Ongeverifieerd] Stabiliteit en gebruiksvoorwaarden van de Speedhive-API.
-- [Geverifieerd] De compacte weergave is getest met een echte browser op 768 bij 512, 768 bij 1024 en 1440 bij 900 pixels, met nagemaakte data van 12 rijders. Er was geen horizontale scroll en de legenda bleef zichtbaar met 50 pixels marge bij twaalf rijen.
+- [Geverifieerd] De compacte weergave is getest met een echte browser op 768 bij 512, 768 bij 1024 en 1440 bij 900 pixels, met nagemaakte data van 12 rijders. Er was geen horizontale scroll en de legenda bleef zichtbaar met 31 pixels marge bij twaalf rijen, ook met een naam van 27 tekens.
 - [Ongeverifieerd] Hoe het eruitziet op het echte scherm. Browserbalken, schaalinstellingen van het apparaat en de afstand tot het scherm kunnen anders uitpakken.
 - [Algemene AI-kennis] Werking van `st.fragment` en `st.cache_data`.

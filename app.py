@@ -331,7 +331,8 @@ table.laps td{padding:11px 14px;text-align:right;border-top:1px solid var(--line
 table.laps tbody tr:nth-child(even){background:#fafafa;}
 table.laps tr.now td{background:#e8f1fb;}
 table.laps tr.now td:first-child{box-shadow:inset 5px 0 0 var(--accent);}
-td.rider{font-weight:700;}
+td.rider{font-weight:700;max-width:12em;overflow:hidden;text-overflow:ellipsis;}
+table.laps th.fit,table.laps td.fit{width:1%;white-space:nowrap;}
 td.muted,.muted{color:var(--muted);font-size:.95rem;}
 .lap{display:inline-block;min-width:5.2em;padding:3px 10px;border-radius:999px;}
 .lap.first{font-weight:700;font-size:1.3rem;}
@@ -373,12 +374,13 @@ COMPACT_RULES = f"""
 .kpi .s{{font-size:.66rem;display:inline;margin-left:.45rem;}}
 .kpi:nth-child(1) .s,.kpi:nth-child(3) .s,.kpi:nth-child(4) .s{{display:none;}}
 .wrap{{border-radius:9px;}}
-table.laps{{font-size:.85rem;}}
+table.laps{{font-size:1rem;}}
+table.laps td.rider{{max-width:11em;overflow:hidden;text-overflow:ellipsis;}}
 table.laps th{{font-size:.58rem;padding:5px 7px;letter-spacing:.04em;}}
-table.laps td{{padding:1px 7px;}}
+table.laps td{{padding:1px 7px;line-height:1.25;}}
 table.laps tbody tr:nth-child(n+{COMPACT_ROWS + 1}){{display:none;}}
-.lap{{min-width:4.6em;padding:1px 6px;line-height:1.3;}}
-.lap.first{{font-size:.95rem;}}
+.lap{{min-width:4.6em;padding:0 7px;line-height:1.3;vertical-align:middle;}}
+.lap.first{{font-size:1.12rem;}}
 .star{{margin-left:.15em;}}
 table.laps tr.now td:first-child{{box-shadow:inset 3px 0 0 var(--accent);}}
 .notice{{margin:0 0 .3rem;padding:4px 10px;font-size:.72rem;border-radius:8px;}}
@@ -441,8 +443,8 @@ def build_table(df: pd.DataFrame, now: datetime) -> str:
         kph = f"{r.kph:.1f}" if r.kph and not pd.isna(r.kph) else "-"
         rows.append(
             f'<tr class="{"now" if active else ""}">'
-            f'<td class="l">{"● " if active else ""}{time_txt}</td>'
-            f'<td class="l rider">{html.escape(str(r.rider))}</td>'
+            f'<td class="l fit">{"● " if active else ""}{time_txt}</td>'
+            f'<td class="l fit rider">{html.escape(str(r.rider))}</td>'
             f"<td>{fmt_lap(r.lap1, r.st1, first=True)}</td>"
             f"<td>{fmt_lap(r.lap2, r.st2)}</td>"
             f"<td>{fmt_lap(r.lap3, r.st3)}</td>"
@@ -451,7 +453,7 @@ def build_table(df: pd.DataFrame, now: datetime) -> str:
             "</tr>"
         )
     head = (
-        '<th class="l">Passering</th><th class="l">Rijder</th><th>Laatste ronde</th>'
+        '<th class="l fit">Passering</th><th class="l fit">Rijder</th><th>Laatste ronde</th>'
         "<th>Ronde -2</th><th>Ronde -3</th><th>km/u</th><th>Dag beste</th>"
     )
     return f'<div class="wrap"><table class="laps"><thead><tr>{head}</tr></thead><tbody>{"".join(rows)}</tbody></table></div>'
