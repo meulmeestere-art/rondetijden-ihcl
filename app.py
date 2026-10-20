@@ -33,7 +33,7 @@ LOCATION_NAME = "IJshal De Vliet, Leiden"
 LOCATION_ID = "208259692"
 API_BASE = "https://practice-api.speedhive.com/api/v1"
 ACTIVITIES_URL = f"{API_BASE}/locations/{LOCATION_ID}/activities"
-ACTIVITIES_COUNT = 30
+ACTIVITIES_COUNT = 100  # genoeg voor alle rijders van een drukke dag
 
 REFRESH_SECONDS = 3  # verversing van het scherm en levensduur van de cache
 REQUEST_TIMEOUT = 5
@@ -43,7 +43,7 @@ MAX_WORKERS = 10
 MIN_LAP_SECONDS = 9.0
 MAX_LAP_SECONDS = 18.0
 
-COMPACT_ROWS = 10  # aantal rijders in de compacte weergave (768 bij 512)
+COMPACT_ROWS = 12  # aantal rijders in de compacte weergave (768 bij 512)
 STALE_MAX_SECONDS = 600  # zo lang tonen we oude gegevens als Speedhive niet antwoordt
 ACTIVE_SECONDS = 60  # rijders die korter geleden passeerden worden gemarkeerd
 ONLY_LATEST_DAY = True  # alleen de meest recente trainingsdag tonen
@@ -368,14 +368,16 @@ COMPACT_RULES = f"""
 .kpis{{grid-template-columns:repeat(4,1fr);gap:6px;margin:.25rem 0 .35rem;}}
 .kpi{{padding:5px 9px;border-radius:9px;}}
 .kpi .l{{font-size:.58rem;letter-spacing:.05em;}}
-.kpi .v{{font-size:1.15rem;line-height:1.2;}}
-.kpi .s{{font-size:.66rem;}}
+.kpi{{overflow:hidden;white-space:nowrap;}}
+.kpi .v{{font-size:1.15rem;line-height:1.2;display:inline;}}
+.kpi .s{{font-size:.66rem;display:inline;margin-left:.45rem;}}
+.kpi:nth-child(1) .s,.kpi:nth-child(3) .s,.kpi:nth-child(4) .s{{display:none;}}
 .wrap{{border-radius:9px;}}
 table.laps{{font-size:.85rem;}}
 table.laps th{{font-size:.58rem;padding:5px 7px;letter-spacing:.04em;}}
-table.laps td{{padding:2px 7px;}}
+table.laps td{{padding:1px 7px;}}
 table.laps tbody tr:nth-child(n+{COMPACT_ROWS + 1}){{display:none;}}
-.lap{{min-width:4.6em;padding:1px 6px;}}
+.lap{{min-width:4.6em;padding:1px 6px;line-height:1.3;}}
 .lap.first{{font-size:.95rem;}}
 .star{{margin-left:.15em;}}
 table.laps tr.now td:first-child{{box-shadow:inset 3px 0 0 var(--accent);}}

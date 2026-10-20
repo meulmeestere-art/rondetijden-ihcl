@@ -2,7 +2,7 @@
 
 ## Wat het dashboard doet
 
-1. Haalt de laatste 30 trainingsactiviteiten van IJshal De Vliet op uit MYLAPS Speedhive.
+1. Haalt de laatste 100 trainingsactiviteiten van IJshal De Vliet op uit MYLAPS Speedhive.
 2. Kiest de meest recente trainingsdag (in Nederlandse tijd).
 3. Haalt per rijder de sessies en rondes op, tot tien rijders tegelijk.
 4. Laat rondes onder 9,0 en boven 18,0 seconden weg. Daaruit komen de laatste drie rondes, de dag beste en de snelheid.
@@ -12,7 +12,7 @@ Het scherm ververst elke 3 seconden. Alleen de tabel ververst, de kop en het log
 
 ## Kleine schermen (768 bij 512 pixels)
 
-Voor een klein scherm langs de baan is er een compacte weergave. Die toont de kop in een smalle regel met kleine logo's, de vier kaarten in een rij en de tien rijders met de meest recente passering. Onderaan staat in de legenda hoeveel rijders er nog meer op het ijs zijn.
+Voor een klein scherm langs de baan is er een compacte weergave. Die toont de kop in een smalle regel met kleine logo's, de vier kaarten in een rij en de twaalf rijders met de meest recente passering. In de gewone weergave staan alle rijders van de dag. Onderaan staat in de legenda hoeveel rijders er nog meer op het ijs zijn.
 
 - **Automatisch:** de compacte weergave gaat aan zodra het venster lager is dan 600 pixels.
 - **Geforceerd:** voeg `?scherm=klein` toe aan het adres, dus `https://rondetijden-ihcl.streamlit.app/?scherm=klein`. Gebruik dit adres op het kleine scherm. Dan werkt het ook als de browser zelf ruimte inneemt, bijvoorbeeld een adresbalk.
@@ -30,7 +30,8 @@ Bovenin `app.py` staan de instellingen:
 | `MAX_LAP_SECONDS` | 18.0 | Tragere rondes tellen niet mee |
 | `ONLY_LATEST_DAY` | `True` | Alleen de laatste trainingsdag tonen |
 | `LOCATION_ID` | `208259692` | Locatie in Speedhive |
-| `COMPACT_ROWS` | 10 | Aantal rijders in de compacte weergave voor kleine schermen |
+| `ACTIVITIES_COUNT` | 100 | Aantal activiteiten dat uit Speedhive wordt opgehaald. Bepaalt hoeveel rijders van een dag maximaal meekomen |
+| `COMPACT_ROWS` | 12 | Aantal rijders in de compacte weergave voor kleine schermen |
 
 De omgevingsvariabele `VERIFY_SSL=0` zet de certificaatcontrole uit. Gebruik dat alleen lokaal als een Mac certificaatfouten geeft.
 
@@ -72,6 +73,6 @@ De omgevingsvariabele `VERIFY_SSL=0` zet de certificaatcontrole uit. Gebruik dat
 - [Logische deductie] De tijdzonefout volgt uit het gedrag van een cloudserver op UTC en het feit dat de oude code de tijdstippen zonder omrekening toonde.
 - [Geverifieerd] Veldnamen en de betekenis van `dateTimeStart` zijn op 20 oktober 2026 gecontroleerd via een aanroep vanuit de browser op sporthive.com. Een directe aanroep zonder `Origin` en `Referer` geeft HTTP 401, daarom stuurt het script die headers mee.
 - [Ongeverifieerd] Stabiliteit en gebruiksvoorwaarden van de Speedhive-API.
-- [Geverifieerd] De compacte weergave is getest met een echte browser op 768 bij 512, 768 bij 1024 en 1440 bij 900 pixels, met nagemaakte data van 12 rijders. Er was geen horizontale scroll en de legenda bleef zichtbaar met 20 pixels marge.
+- [Geverifieerd] De compacte weergave is getest met een echte browser op 768 bij 512, 768 bij 1024 en 1440 bij 900 pixels, met nagemaakte data van 12 rijders. Er was geen horizontale scroll en de legenda bleef zichtbaar met 50 pixels marge bij twaalf rijen.
 - [Ongeverifieerd] Hoe het eruitziet op het echte scherm. Browserbalken, schaalinstellingen van het apparaat en de afstand tot het scherm kunnen anders uitpakken.
 - [Algemene AI-kennis] Werking van `st.fragment` en `st.cache_data`.
