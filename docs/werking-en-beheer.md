@@ -16,7 +16,10 @@ Voor een klein scherm langs de baan is er een compacte weergave. Die toont de ko
 
 - **Automatisch:** de compacte weergave gaat aan zodra het venster lager is dan 600 pixels.
 - **Geforceerd:** voeg `?scherm=klein` toe aan het adres, dus `https://rondetijden-ihcl.streamlit.app/?scherm=klein`. Gebruik dit adres op het kleine scherm. Dan werkt het ook als de browser zelf ruimte inneemt, bijvoorbeeld een adresbalk.
-- De bovenbalk van Streamlit is dan verborgen. Dat is bedoeld voor een scherm dat alleen meekijkt.
+- De bovenbalk van Streamlit is dan verborgen en er staat 1,1 rem ruimte boven de kop (instelling `COMPACT_TOP`). Dat is bedoeld voor een scherm dat alleen meekijkt.
+- **Browserbalken weghalen:** een webpagina kan de adresbalk, tabbladen en bladwijzerbalk van Chrome niet zelf verbergen. Zet Chrome in volledig scherm: op een Mac Control+Command+F (of Weergave en dan Volledig scherm), op Windows F11. Zet op een Mac in het menu Weergave de optie "Werkbalk altijd tonen in volledig scherm" uit. De compacte weergave is afgestemd op de volle hoogte van 512 pixels, dus pas dan staan alle twaalf rijen en de legenda er helemaal op.
+- **Niet gebruiken:** `?embed=true`. Dat haalt de bovenbalk weg maar zet er een eigen balk onderaan voor in de plaats.
+- **Knop Manage app:** die rechtsonder zie je alleen als je zelf als eigenaar bent ingelogd. Gebruik op de cube een Chrome-profiel of privevenster zonder inlog bij Streamlit, dan staat de knop er niet.
 - Op een iPad staand (768 bij 1024) is de gewone weergave iets kleiner gezet zodat de tabel zonder zijwaarts scrollen past.
 
 ## Instellingen
@@ -31,6 +34,7 @@ Bovenin `app.py` staan de instellingen:
 | `ONLY_LATEST_DAY` | `True` | Alleen de laatste trainingsdag tonen |
 | `LOCATION_ID` | `208259692` | Locatie in Speedhive |
 | `ACTIVITIES_COUNT` | 100 | Aantal activiteiten dat uit Speedhive wordt opgehaald. Bepaalt hoeveel rijders van een dag maximaal meekomen |
+| `COMPACT_TOP` | `1.1rem` | Ruimte boven de kop in de compacte weergave |
 | `COMPACT_ROWS` | 12 | Aantal rijders in de compacte weergave voor kleine schermen |
 
 De omgevingsvariabele `VERIFY_SSL=0` zet de certificaatcontrole uit. Gebruik dat alleen lokaal als een Mac certificaatfouten geeft.
@@ -74,6 +78,8 @@ De omgevingsvariabele `VERIFY_SSL=0` zet de certificaatcontrole uit. Gebruik dat
 - [Logische deductie] De tijdzonefout volgt uit het gedrag van een cloudserver op UTC en het feit dat de oude code de tijdstippen zonder omrekening toonde.
 - [Geverifieerd] Veldnamen en de betekenis van `dateTimeStart` zijn op 20 oktober 2026 gecontroleerd via een aanroep vanuit de browser op sporthive.com. Een directe aanroep zonder `Origin` en `Referer` geeft HTTP 401, daarom stuurt het script die headers mee.
 - [Ongeverifieerd] Stabiliteit en gebruiksvoorwaarden van de Speedhive-API.
-- [Geverifieerd] De compacte weergave is getest met een echte browser op 768 bij 512, 768 bij 1024 en 1440 bij 900 pixels, met nagemaakte data van 12 rijders. Er was geen horizontale scroll en de legenda bleef zichtbaar met 31 pixels marge bij twaalf rijen, ook met een naam van 27 tekens.
+- [Geverifieerd] De compacte weergave is getest met een echte browser op 768 bij 512, 768 bij 1024 en 1440 bij 900 pixels, met nagemaakte data van 12 rijders. Er was geen horizontale scroll en de legenda bleef zichtbaar bij twaalf rijen, ook met een naam van 27 tekens. Na het vergroten van de bovenmarge eindigt de legenda op 491 van 512 pixels, dus 21 pixels marge onderaan.
+- [Geverifieerd] Op 21 oktober 2026 live getest met `?scherm=klein&embed=true`: de bovenbalk verdween, maar onderaan verscheen de balk Built with Streamlit en Fullscreen. De knop Manage app was in die test niet zichtbaar.
+- [Afleiding] Uit de foto van de cube volgt dat de browserbalken ongeveer 80 pixels of meer innemen. Volledig scherm is daarom de oplossing, niet een aanpassing in de pagina.
 - [Ongeverifieerd] Hoe het eruitziet op het echte scherm. Browserbalken, schaalinstellingen van het apparaat en de afstand tot het scherm kunnen anders uitpakken.
 - [Algemene AI-kennis] Werking van `st.fragment` en `st.cache_data`.

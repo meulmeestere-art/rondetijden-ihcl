@@ -43,6 +43,7 @@ MAX_WORKERS = 10
 MIN_LAP_SECONDS = 9.0
 MAX_LAP_SECONDS = 18.0
 
+COMPACT_TOP = "1.1rem"  # ruimte boven de kop in de compacte weergave
 COMPACT_ROWS = 12  # aantal rijders in de compacte weergave (768 bij 512)
 STALE_MAX_SECONDS = 600  # zo lang tonen we oude gegevens als Speedhive niet antwoordt
 ACTIVE_SECONDS = 60  # rijders die korter geleden passeerden worden gemarkeerd
@@ -360,7 +361,7 @@ td.muted,.muted{color:var(--muted);font-size:.95rem;}
 # via de browser zodra het scherm lager is dan 600 pixels, of via ?scherm=klein.
 COMPACT_RULES = f"""
 [data-testid="stHeader"],[data-testid="stToolbar"]{{display:none!important;}}
-[data-testid="stMainBlockContainer"],.block-container{{padding:.45rem .7rem .3rem!important;max-width:100%!important;}}
+[data-testid="stMainBlockContainer"],.block-container{{padding:{COMPACT_TOP} .7rem .3rem!important;max-width:100%!important;}}
 [data-testid="stVerticalBlock"]{{gap:.35rem!important;}}
 .head{{gap:.6rem;margin:0 0 .15rem;}}
 .head img{{height:36px;}}
