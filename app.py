@@ -529,8 +529,6 @@ def live_view() -> None:
                 f'Je ziet de gegevens van {meta["stale_at"].strftime("%H:%M:%S")}. '
                 "Een nieuwe poging volgt automatisch.</div>"
             )
-        elif meta["errors"]:
-            notices += f'<div class="notice">⚠️ {meta["errors"]} rijder(s) niet ververst, de vorige waarde blijft staan.</div>'
         st.html(notices + build_kpis(df, meta, now) + build_table(df, now) + build_legend(df))
     except Exception:  # nooit een foutmelding met traceback aan de baan tonen
         log.exception("Weergave mislukt")

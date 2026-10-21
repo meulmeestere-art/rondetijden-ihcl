@@ -46,7 +46,7 @@ De omgevingsvariabele `VERIFY_SSL=0` zet de certificaatcontrole uit. Gebruik dat
 - SSL-controle staat aan.
 - Tijden worden getoond in Nederlandse tijd. Op een server in de cloud staat de klok anders op UTC en liepen de tijden twee uur achter.
 - Het aantal rondes telt nu alleen rondes binnen de grenzen, zodat het past bij de dag beste.
-- Een fout bij een enkele rijder wordt in de statusregel getoond in plaats van stil overgeslagen.
+- Een fout bij een enkele rijder blijft zonder melding op het scherm: de vorige waarde blijft staan en de rijder wordt bij de volgende verversing vanzelf bijgewerkt. Alleen als Speedhive helemaal niet reageert verschijnt de gele melding.
 - Optionele toegangscode via `ACCESS_CODE`.
 - Foutafhandeling: twee herhaalpogingen bij een tijdelijke fout van Speedhive, onverwachte antwoorden worden afgevangen, en bij een storing blijven de laatste gelukte gegevens zichtbaar met een melding. Een foutmelding met traceback wordt niet meer getoond.
 - De kolommen Transponder en Rondes zijn weggehaald. De kaart Rondes totaal is vervangen door Laatste passering.
@@ -63,7 +63,6 @@ De omgevingsvariabele `VERIFY_SSL=0` zet de certificaatcontrole uit. Gebruik dat
 | Gele melding met de laatste gelukte tijd | Speedhive geeft tijdelijk een fout (bijvoorbeeld foutcode 500) | Niets doen. Het script probeert het opnieuw en toont intussen de laatste gelukte gegevens, tot 10 minuten lang |
 | Speedhive geeft foutcode of onverwacht antwoord, zonder tabel | De fout duurt langer dan 10 minuten of er waren nog geen gegevens | Even wachten. Blijft het zo, controleer in de browser of de Speedhive-pagina van de locatie nog werkt |
 | Wachten op doorkomsten van rijders | Niemand op het ijs of alle rondes buiten de grenzen | Controleer de grenzen van 9,0 en 18,0 seconden |
-| Rijder(s) niet ververst | Time-out bij een enkele rijder | De vorige waarde blijft staan en verdwijnt bij de volgende verversing |
 | App slaapt | 12 uur zonder bezoek | Op de knop klikken om hem wakker te maken |
 
 ## Aandachtspunten voor het bestuur
