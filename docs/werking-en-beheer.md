@@ -5,7 +5,7 @@
 1. Haalt de laatste 100 trainingsactiviteiten van IJshal De Vliet op uit MYLAPS Speedhive.
 2. Kiest de meest recente trainingsdag (in Nederlandse tijd).
 3. Haalt per rijder de sessies en rondes op, tot tien rijders tegelijk.
-4. Laat rondes onder 9,0 en boven 18,0 seconden weg. Daaruit komen de laatste drie rondes, de dag beste en de snelheid.
+4. Laat rondes onder 9,0 en boven 18,0 seconden weg. Daaruit komen de laatste drie rondes, de dag beste en de snelheid. De kolom Top km/u toont de hoogste snelheid van de laatste drie rondes, zodat een flying lap zichtbaar blijft na de uitrijronde.
 5. Toont de rijder met de meest recente passering bovenaan.
 
 Het scherm ververst elke 3 seconden. Alleen de tabel ververst, de kop en het logo blijven staan. De opgehaalde data wordt 3 seconden gedeeld tussen alle kijkers. Meer schermen betekent dus niet meer verzoeken aan Speedhive.

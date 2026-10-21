@@ -145,7 +145,15 @@ def fetch_skater(session: requests.Session, activity: dict) -> dict | None:
 
     laps.sort(key=lambda item: item[0])
     last = laps[-1]
-    speed = (last[3].get("speed") or {}).get("kph") or 0.0
+    # Hoogste snelheid van de laatste drie rondes. Bij flying laps is de laatste
+    # ronde de uitrijronde, terwijl de snelle ronde daarvoor zat.
+    speeds = []
+    for item in laps[-3:]:
+        try:
+            speeds.append(float((item[3].get("speed") or {}).get("kph")))
+        except (TypeError, ValueError):
+            pass
+    speed = max(speeds) if speeds else 0.0
 
     best = min(item[2] for item in laps)
 
@@ -465,7 +473,7 @@ def build_table(df: pd.DataFrame, now: datetime) -> str:
         )
     head = (
         '<th class="l fit">Passering</th><th class="l fit">Rijder</th><th>Laatste ronde</th>'
-        "<th>Ronde -2</th><th>Ronde -3</th><th>km/u</th><th>Dag beste</th>"
+        "<th>Ronde -2</th><th>Ronde -3</th><th>Top km/u</th><th>Dag beste</th>"
     )
     return f'<div class="wrap"><table class="laps"><thead><tr>{head}</tr></thead><tbody>{"".join(rows)}</tbody></table></div>'
 
