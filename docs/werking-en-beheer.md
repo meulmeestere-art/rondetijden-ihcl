@@ -12,12 +12,12 @@ Het scherm ververst elke 3 seconden. Alleen de tabel ververst, de kop en het log
 
 ## Kleine schermen (768 bij 512 pixels)
 
-Voor een klein scherm langs de baan is er een compacte weergave. Die toont de kop in een smalle regel met kleine logo's, de vier kaarten in een rij en de twaalf rijders met de meest recente passering. In de gewone weergave staan alle rijders van de dag. Onderaan staat in de legenda hoeveel rijders er nog meer op het ijs zijn.
+Voor een klein scherm langs de baan is er een compacte weergave. Die toont op één regel de titel, de vier kaarten en de kleine logo's, en daaronder de veertien rijders met de meest recente passering. In de gewone weergave staan alle rijders van de dag. Onderaan staat in de legenda hoeveel rijders er nog meer op het ijs zijn.
 
 - **Automatisch:** de compacte weergave gaat aan zodra het venster lager is dan 600 pixels.
 - **Geforceerd:** voeg `?scherm=klein` toe aan het adres, dus `https://rondetijden-ihcl.streamlit.app/?scherm=klein`. Gebruik dit adres op het kleine scherm. Dan werkt het ook als de browser zelf ruimte inneemt, bijvoorbeeld een adresbalk.
 - De bovenbalk van Streamlit is dan verborgen en er staat 1,1 rem ruimte boven de kop (instelling `COMPACT_TOP`). Dat is bedoeld voor een scherm dat alleen meekijkt.
-- **Browserbalken weghalen:** een webpagina kan de adresbalk, tabbladen en bladwijzerbalk van Chrome niet zelf verbergen. Zet Chrome in volledig scherm: op een Mac Control+Command+F (of Weergave en dan Volledig scherm), op Windows F11. Zet op een Mac in het menu Weergave de optie "Werkbalk altijd tonen in volledig scherm" uit. De compacte weergave is afgestemd op de volle hoogte van 512 pixels, dus pas dan staan alle twaalf rijen en de legenda er helemaal op.
+- **Browserbalken weghalen:** een webpagina kan de adresbalk, tabbladen en bladwijzerbalk van Chrome niet zelf verbergen. Zet Chrome in volledig scherm: op een Mac Control+Command+F (of Weergave en dan Volledig scherm), op Windows F11. Zet op een Mac in het menu Weergave de optie "Werkbalk altijd tonen in volledig scherm" uit. De compacte weergave is afgestemd op de volle hoogte van 512 pixels, dus pas dan staan alle veertien rijen en de legenda er helemaal op.
 - **Niet gebruiken:** `?embed=true`. Dat haalt de bovenbalk weg maar zet er een eigen balk onderaan voor in de plaats.
 - **Knop Manage app:** die rechtsonder zie je alleen als je zelf als eigenaar bent ingelogd. Gebruik op de cube een Chrome-profiel of privevenster zonder inlog bij Streamlit, dan staat de knop er niet.
 - Op een iPad staand (768 bij 1024) is de gewone weergave iets kleiner gezet zodat de tabel zonder zijwaarts scrollen past.
@@ -35,7 +35,7 @@ Bovenin `app.py` staan de instellingen:
 | `LOCATION_ID` | `208259692` | Locatie in Speedhive |
 | `ACTIVITIES_COUNT` | 100 | Aantal activiteiten dat uit Speedhive wordt opgehaald. Bepaalt hoeveel rijders van een dag maximaal meekomen |
 | `COMPACT_TOP` | `1.1rem` | Ruimte boven de kop in de compacte weergave |
-| `COMPACT_ROWS` | 12 | Aantal rijders in de compacte weergave voor kleine schermen |
+| `COMPACT_ROWS` | 14 | Aantal rijders in de compacte weergave voor kleine schermen |
 
 De omgevingsvariabele `VERIFY_SSL=0` zet de certificaatcontrole uit. Gebruik dat alleen lokaal als een Mac certificaatfouten geeft.
 
@@ -54,6 +54,7 @@ De omgevingsvariabele `VERIFY_SSL=0` zet de certificaatcontrole uit. Gebruik dat
 - PR staat alleen bij de ronde die gelijk is aan de dag beste. Sneller en langzamer wordt berekend op de gefilterde rondes. De status van Speedhive rekende ook mee met foutmetingen, waardoor bij 2 van de 10 rijders de echte beste ronde geen PR kreeg.
 - Logo van IHCL links en van de Academy rechts, lichte weergave zodat de zwarte logo's leesbaar blijven. De logo's worden bij het opstarten verkleind en in de pagina ingebed.
 - Compacte weergave voor schermen van 768 bij 512 pixels.
+- De vier kaarten staan op dezelfde regel als de titel, het schaatsicoon bij de titel is weggehaald. Dat geeft op de cube ruimte voor twee rijders extra. Op een smal scherm, zoals een iPad staand, gaan de kaarten onder de titel.
 - De kolommen Passering en Rijder zijn zo smal als hun inhoud. De ruimte die dat oplevert gaat naar de tijden, die in de compacte weergave groter zijn. Een lange naam wordt afgekapt met puntjes.
 
 ## Bij storing
@@ -77,7 +78,7 @@ De omgevingsvariabele `VERIFY_SSL=0` zet de certificaatcontrole uit. Gebruik dat
 - [Logische deductie] De tijdzonefout volgt uit het gedrag van een cloudserver op UTC en het feit dat de oude code de tijdstippen zonder omrekening toonde.
 - [Geverifieerd] Veldnamen en de betekenis van `dateTimeStart` zijn op 20 oktober 2026 gecontroleerd via een aanroep vanuit de browser op sporthive.com. Een directe aanroep zonder `Origin` en `Referer` geeft HTTP 401, daarom stuurt het script die headers mee.
 - [Ongeverifieerd] Stabiliteit en gebruiksvoorwaarden van de Speedhive-API.
-- [Geverifieerd] De compacte weergave is getest met een echte browser op 768 bij 512, 768 bij 1024 en 1440 bij 900 pixels, met nagemaakte data van 12 rijders. Er was geen horizontale scroll en de legenda bleef zichtbaar bij twaalf rijen, ook met een naam van 27 tekens. Na het vergroten van de bovenmarge eindigt de legenda op 491 van 512 pixels, dus 21 pixels marge onderaan.
+- [Geverifieerd] De compacte weergave is getest met een echte browser op 768 bij 512, 768 bij 1024 en 1440 bij 900 pixels, met nagemaakte data van 12 rijders. Er was geen horizontale scroll en de legenda bleef zichtbaar bij twaalf rijen, ook met een naam van 27 tekens. Met de titel en kaarten op één regel en veertien rijen eindigt de legenda op 484 van 512 pixels, dus 28 pixels marge onderaan.
 - [Geverifieerd] Op 21 oktober 2026 live getest met `?scherm=klein&embed=true`: de bovenbalk verdween, maar onderaan verscheen de balk Built with Streamlit en Fullscreen. De knop Manage app was in die test niet zichtbaar.
 - [Afleiding] Uit de foto van de cube volgt dat de browserbalken ongeveer 80 pixels of meer innemen. Volledig scherm is daarom de oplossing, niet een aanpassing in de pagina.
 - [Ongeverifieerd] Hoe het eruitziet op het echte scherm. Browserbalken, schaalinstellingen van het apparaat en de afstand tot het scherm kunnen anders uitpakken.

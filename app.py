@@ -44,7 +44,7 @@ MIN_LAP_SECONDS = 9.0
 MAX_LAP_SECONDS = 18.0
 
 COMPACT_TOP = "1.1rem"  # ruimte boven de kop in de compacte weergave
-COMPACT_ROWS = 12  # aantal rijders in de compacte weergave (768 bij 512)
+COMPACT_ROWS = 14  # aantal rijders in de compacte weergave (768 bij 512)
 STALE_MAX_SECONDS = 600  # zo lang tonen we oude gegevens als Speedhive niet antwoordt
 ACTIVE_SECONDS = 60  # rijders die korter geleden passeerden worden gemarkeerd
 ONLY_LATEST_DAY = True  # alleen de meest recente trainingsdag tonen
@@ -347,12 +347,20 @@ td.muted,.muted{color:var(--muted);font-size:.95rem;}
 .legend{margin:.7rem 0 0;color:var(--muted);font-size:.9rem;}
 .empty{padding:2.5rem;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:14px;font-size:1.2rem;}
 .more{display:none;}
-.head{display:flex;align-items:center;gap:1.2rem;margin:.2rem 0 .8rem;}
+.head{display:flex;flex-wrap:wrap;align-items:center;gap:.6rem 1.2rem;margin:.2rem 0 .8rem;}
+.head .kpis{flex:1 1 440px;display:grid;grid-template-columns:1fr 1.4fr 1fr 1fr;gap:10px;margin:0;}
+.head .kpi{padding:8px 12px;border-radius:12px;}
+.head .kpi .l{font-size:.7rem;}
+.head .kpi{overflow:hidden;white-space:nowrap;}
+.head .kpi .v{font-size:1.4rem;line-height:1.25;display:inline;}
+.head .kpi .s{display:none;}
+.head .kpi:nth-child(2) .s{display:inline;font-size:.8rem;margin-left:.4rem;}
 .head img{height:96px;width:auto;flex:none;}
-.head .ttl{flex:1;min-width:0;}
-.head h1{margin:0!important;padding:0!important;font-size:2.4rem!important;line-height:1.15!important;font-weight:700;color:var(--ink);}
+.head .ttl{flex:0 0 auto;}
+.head h1{margin:0!important;padding:0!important;font-size:1.5rem!important;white-space:nowrap;line-height:1.15!important;font-weight:700;color:var(--ink);}
 .head .loc{color:var(--muted);margin-top:.3rem;}
 @media (max-width:900px){table.laps{font-size:1rem;}table.laps th{padding:10px 8px;}table.laps td{padding:8px 8px;}.lap{min-width:4.4em;padding:2px 6px;}.lap.first{font-size:1.1rem;}}
+@media (max-width:1400px){.head .kpis{order:5;flex-basis:100%;}.head img:last-child{order:4;}}
 @media (max-width:700px){.head img{height:56px;}.head h1{font-size:1.5rem!important;}}
 </style>
 """
@@ -363,17 +371,18 @@ COMPACT_RULES = f"""
 [data-testid="stHeader"],[data-testid="stToolbar"]{{display:none!important;}}
 [data-testid="stMainBlockContainer"],.block-container{{padding:{COMPACT_TOP} .7rem .3rem!important;max-width:100%!important;}}
 [data-testid="stVerticalBlock"]{{gap:.35rem!important;}}
-.head{{gap:.6rem;margin:0 0 .15rem;}}
-.head img{{height:36px;}}
-.head h1{{font-size:1.15rem!important;}}
-.head .loc{{font-size:.72rem;margin-top:.05rem;}}
-.kpis{{grid-template-columns:repeat(4,1fr);gap:6px;margin:.25rem 0 .35rem;}}
-.kpi{{padding:5px 9px;border-radius:9px;}}
-.kpi .l{{font-size:.58rem;letter-spacing:.05em;}}
-.kpi{{overflow:hidden;white-space:nowrap;}}
-.kpi .v{{font-size:1.15rem;line-height:1.2;display:inline;}}
-.kpi .s{{font-size:.66rem;display:inline;margin-left:.45rem;}}
-.kpi:nth-child(1) .s,.kpi:nth-child(3) .s,.kpi:nth-child(4) .s{{display:none;}}
+.head{{flex-wrap:nowrap;gap:.5rem;margin:0 0 .3rem;}}
+.head img{{height:38px;}}
+.head .ttl{{flex:0 1 auto;max-width:11.5rem;}}
+.head h1{{font-size:.98rem!important;line-height:1.1!important;white-space:normal!important;}}
+.head .loc{{display:none;}}
+.head .kpis{{order:0;flex:1 1 0;min-width:0;grid-template-columns:1fr 1.5fr 1fr 1fr;gap:5px;}}
+.head img:last-child{{order:0;}}
+.head .kpi{{padding:3px 7px;border-radius:8px;overflow:hidden;white-space:nowrap;}}
+.head .kpi .l{{font-size:.5rem;letter-spacing:.04em;}}
+.head .kpi .v{{font-size:1.05rem;line-height:1.2;display:inline;}}
+.head .kpi .s{{display:none;}}
+.head .kpi:nth-child(2) .s{{display:inline;font-size:.58rem;margin-left:.3rem;}}
 .wrap{{border-radius:9px;}}
 table.laps{{font-size:1rem;}}
 table.laps td.rider{{max-width:11em;overflow:hidden;text-overflow:ellipsis;}}
@@ -407,7 +416,7 @@ def logo_data_uri(name: str) -> str:
     return "data:image/png;base64," + base64.b64encode(buf.getvalue()).decode()
 
 
-def build_header() -> str:
+def build_header(kpis: str = "") -> str:
     def img(name: str, alt: str) -> str:
         uri = logo_data_uri(name)
         return f'<img src="{uri}" alt="{alt}">' if uri else "<span></span>"
@@ -415,8 +424,9 @@ def build_header() -> str:
     return (
         '<div class="head">'
         + img("logo_ihcl.png", "IHCL Leiden")
-        + f'<div class="ttl"><h1>⛸️ {html.escape(APP_TITLE)}</h1>'
+        + f'<div class="ttl"><h1>{html.escape(APP_TITLE)}</h1>'
         + f'<div class="loc">Locatie: {html.escape(LOCATION_NAME)}</div></div>'
+        + kpis
         + img("logo_academy.png", "Shorttrack Academy Leiden")
         + "</div>"
     )
@@ -505,7 +515,7 @@ LEGEND_HTML = (
 # Scherm
 # ---------------------------------------------------------------------------
 forced = "<style>" + COMPACT_RULES + "</style>" if st.query_params.get("scherm") == "klein" else ""
-st.html(CSS + forced + build_header())
+st.html(CSS + forced)
 
 require_access()
 
@@ -519,7 +529,7 @@ def live_view() -> None:
 
         if df.empty:
             msg = html.escape(meta["message"] or "Geen data.")
-            st.html(f'<div class="empty">{msg}<br>Wachten op doorkomsten van rijders...</div>')
+            st.html(build_header() + f'<div class="empty">{msg}<br>Wachten op doorkomsten van rijders...</div>')
             return
 
         notices = ""
@@ -529,10 +539,10 @@ def live_view() -> None:
                 f'Je ziet de gegevens van {meta["stale_at"].strftime("%H:%M:%S")}. '
                 "Een nieuwe poging volgt automatisch.</div>"
             )
-        st.html(notices + build_kpis(df, meta, now) + build_table(df, now) + build_legend(df))
+        st.html(build_header(build_kpis(df, meta, now)) + notices + build_table(df, now) + build_legend(df))
     except Exception:  # nooit een foutmelding met traceback aan de baan tonen
         log.exception("Weergave mislukt")
-        st.html('<div class="empty">Even geen gegevens. Een nieuwe poging volgt automatisch.</div>')
+        st.html(build_header() + '<div class="empty">Even geen gegevens. Een nieuwe poging volgt automatisch.</div>')
 
 
 live_view()
